@@ -3,6 +3,7 @@ namespace RjClicker.App.Core.Models;
 public sealed record RuntimeConfig
 {
     private static readonly IReadOnlyList<PointTarget> EmptyTargets = Array.Empty<PointTarget>();
+    private IReadOnlyList<PointTarget> _targets = EmptyTargets;
 
     public RuntimeConfig(
         MouseButton mouseButton,
@@ -21,7 +22,7 @@ public sealed record RuntimeConfig
         DeliveryMode = deliveryMode;
         UseCounter = useCounter;
         MaxClicks = maxClicks;
-        Targets = CreateTargetsSnapshot(targets);
+        Targets = targets ?? EmptyTargets;
     }
 
     public MouseButton MouseButton { get; init; }
@@ -38,7 +39,11 @@ public sealed record RuntimeConfig
 
     public int? MaxClicks { get; init; }
 
-    public IReadOnlyList<PointTarget> Targets { get; init; }
+    public IReadOnlyList<PointTarget> Targets
+    {
+        get => _targets;
+        init => _targets = CreateTargetsSnapshot(value);
+    }
 
     private static IReadOnlyList<PointTarget> CreateTargetsSnapshot(IReadOnlyList<PointTarget>? targets)
     {

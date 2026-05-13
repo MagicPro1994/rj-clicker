@@ -121,6 +121,18 @@ public sealed class RuntimeConfigValidatorTests
         config.Targets.Should().NotBeNull();
         config.Targets.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RuntimeConfig_ShouldSnapshotTargets_WhenReassignedViaWithExpression()
+    {
+        var sourceTargets = new List<PointTarget> { PointTarget.Absolute(100, 200) };
+        var config = RuntimeConfigFactory.Create();
+        var reassignedConfig = config with { Targets = sourceTargets };
+
+        sourceTargets.Add(PointTarget.Absolute(300, 400));
+
+        reassignedConfig.Targets.Should().HaveCount(1);
+    }
 }
 
 internal static class RuntimeConfigFactory
