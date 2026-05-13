@@ -93,6 +93,34 @@ public sealed class RuntimeConfigValidatorTests
         var mutateErrors = () => ((IList<string>)result.Errors).Add("third");
         mutateErrors.Should().Throw<NotSupportedException>();
     }
+
+    [Fact]
+    public void RuntimeConfig_ShouldNotBeAffectedByExternalTargetsMutation()
+    {
+        var sourceTargets = new List<PointTarget> { PointTarget.Absolute(100, 200) };
+        var config = RuntimeConfigFactory.Create(targets: sourceTargets);
+
+        sourceTargets.Add(PointTarget.Absolute(300, 400));
+
+        config.Targets.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void RuntimeConfig_ShouldUseEmptyTargets_WhenConstructedWithNullTargets()
+    {
+        var config = new RuntimeConfig(
+            MouseButton.Left,
+            PressType.Single,
+            100,
+            ClickMode.Simultaneous,
+            DeliveryMode.Foreground,
+            false,
+            null,
+            null);
+
+        config.Targets.Should().NotBeNull();
+        config.Targets.Should().BeEmpty();
+    }
 }
 
 internal static class RuntimeConfigFactory
