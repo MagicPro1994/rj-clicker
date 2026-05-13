@@ -1,0 +1,13 @@
+# Add .gitignore if needed
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.png
+!templates/.gitkeep
+
+# .NET build artifacts
+src/**/bin/
+src/**/obj/
+tests/**/bin/
+tests/**/obj/
