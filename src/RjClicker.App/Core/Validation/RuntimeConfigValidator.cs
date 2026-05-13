@@ -2,12 +2,27 @@ using RjClicker.App.Core.Models;
 
 namespace RjClicker.App.Core.Validation;
 
-public sealed record ValidationResult(bool IsValid, IReadOnlyList<string> Errors);
+public sealed class ValidationResult
+{
+    private static readonly IReadOnlyList<string> EmptyErrors = Array.Empty<string>();
+
+    public ValidationResult(bool isValid, IEnumerable<string>? errors)
+    {
+        IsValid = isValid;
+        Errors = errors is null ? EmptyErrors : Array.AsReadOnly(errors.ToArray());
+    }
+
+    public bool IsValid { get; }
+
+    public IReadOnlyList<string> Errors { get; }
+}
 
 public static class RuntimeConfigValidator
 {
     public static ValidationResult Validate(RuntimeConfig config)
     {
+        ArgumentNullException.ThrowIfNull(config);
+
         var errors = new List<string>();
 
         if (config.TotalIntervalMilliseconds < 1)
@@ -15,7 +30,7 @@ public static class RuntimeConfigValidator
             errors.Add("Interval must be at least 1 ms");
         }
 
-        if (config.Targets.Count == 0)
+        if (config.Targets is null || config.Targets.Count == 0)
         {
             errors.Add("Config must include at least one target");
         }

@@ -7,9 +7,36 @@ namespace RjClicker.Core.Tests.Validation;
 public sealed class RuntimeConfigValidatorTests
 {
     [Fact]
+    public void Validate_ShouldThrowArgumentNullException_WhenConfigIsNull()
+    {
+        var act = () => RuntimeConfigValidator.Validate(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void Validate_ShouldReject_WhenNoTargets()
     {
         var config = RuntimeConfigFactory.Create(targets: Array.Empty<PointTarget>());
+
+        var result = RuntimeConfigValidator.Validate(config);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Should().Contain(error => error.Contains("at least one target"));
+    }
+
+    [Fact]
+    public void Validate_ShouldReject_WhenTargetsListIsNull()
+    {
+        var config = new RuntimeConfig(
+            MouseButton.Left,
+            PressType.Single,
+            100,
+            ClickMode.Simultaneous,
+            DeliveryMode.Foreground,
+            false,
+            null,
+            null!);
 
         var result = RuntimeConfigValidator.Validate(config);
 
@@ -52,6 +79,19 @@ public sealed class RuntimeConfigValidatorTests
         missingResult.Errors.Should().Contain(error => error.Contains("MaxClicks >= 1"));
         zeroResult.IsValid.Should().BeFalse();
         zeroResult.Errors.Should().Contain(error => error.Contains("MaxClicks >= 1"));
+    }
+
+    [Fact]
+    public void ValidationResult_ShouldCopyAndProtectErrorsFromMutation()
+    {
+        var sourceErrors = new List<string> { "first" };
+        var result = new ValidationResult(false, sourceErrors);
+
+        sourceErrors.Add("second");
+
+        result.Errors.Should().ContainSingle().Which.Should().Be("first");
+        var mutateErrors = () => ((IList<string>)result.Errors).Add("third");
+        mutateErrors.Should().Throw<NotSupportedException>();
     }
 }
 
