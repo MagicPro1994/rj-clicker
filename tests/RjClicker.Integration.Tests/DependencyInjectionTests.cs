@@ -160,6 +160,53 @@ public sealed class DependencyInjectionTests : IDisposable
     }
 
     [Fact]
+    public async Task SettingsStore_DefaultConstructor_ShouldUseBaseDirectorySettingsFile()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "settings.json");
+        File.Delete(path);
+        var store = new JsonSettingsStore();
+
+        try
+        {
+            await store.SaveAsync(new AppSettings { MouseButton = "Right" });
+
+            File.Exists(path).Should().BeTrue();
+            (await File.ReadAllTextAsync(path)).Should().Contain("Right");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task SettingsStore_ShouldLogDeserializeFailures()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"rjclicker-log-{Guid.NewGuid()}");
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            var settingsPath = Path.Combine(tempDir, "settings.json");
+            var logPath = Path.Combine(tempDir, "rjclicker.log");
+
+            await File.WriteAllTextAsync(settingsPath, "not valid json");
+
+            var logger = new FileAppLogger(logPath);
+            var store = new JsonSettingsStore(settingsPath, logger);
+
+            var result = await store.LoadAsync();
+
+            result.Should().BeNull();
+            (await File.ReadAllTextAsync(logPath)).Should().Contain("Failed to deserialize settings");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public void AppSettings_ShouldHaveDefaultValues()
     {
         var settings = new AppSettings();
