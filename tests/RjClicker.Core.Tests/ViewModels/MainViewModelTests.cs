@@ -132,8 +132,7 @@ public sealed class MainViewModelTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new SlowFakeScheduler();
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
         var viewModel = CreateViewModel(controller: controller);
 
         viewModel.AddPoint.Execute(null);
@@ -144,6 +143,25 @@ public sealed class MainViewModelTests
         viewModel.StopClickSession.Execute(null);
         await Task.Delay(30);
 
+        viewModel.IsRunning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ToggleClickSessionAsync_ShouldStartAndStopSession()
+    {
+        var dispatcher = new FakeDispatcher();
+        var scheduler = new SlowFakeScheduler();
+        var controller = new ClickSessionController(dispatcher, scheduler);
+        var viewModel = CreateViewModel(controller: controller);
+
+        viewModel.AddPoint.Execute(null);
+
+        await viewModel.ToggleClickSessionAsync();
+        await Task.Delay(30);
+        viewModel.IsRunning.Should().BeTrue();
+
+        await viewModel.ToggleClickSessionAsync();
+        await Task.Delay(30);
         viewModel.IsRunning.Should().BeFalse();
     }
 
@@ -234,7 +252,7 @@ public sealed class MainViewModelTests
         IPointCaptureService? pointCaptureService = null,
         IWindowBindingService? windowBindingService = null)
     {
-        controller ??= new ClickSessionController(new FakeDispatcher(), new FakeScheduler(maxTicks: 1), new FakeHotkeyService());
+        controller ??= new ClickSessionController(new FakeDispatcher(), new FakeScheduler(maxTicks: 1));
         pointCaptureService ??= new FakePointCaptureService(null);
         windowBindingService ??= new FakeWindowBindingService();
 

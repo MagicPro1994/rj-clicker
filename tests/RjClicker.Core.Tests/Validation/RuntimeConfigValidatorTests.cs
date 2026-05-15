@@ -15,25 +15,25 @@ public sealed class RuntimeConfigValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldReject_WhenNoTargets()
+    public void Validate_ShouldPass_WhenForegroundModeHasNoTargets()
     {
         var config = RuntimeConfigFactory.Create(targets: Array.Empty<PointTarget>());
 
         var result = RuntimeConfigValidator.Validate(config);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error => error.Contains("at least one target"));
+        result.IsValid.Should().BeTrue();
+        result.Errors.Should().BeEmpty();
     }
 
     [Fact]
-    public void Validate_ShouldReject_WhenTargetsListIsNull()
+    public void Validate_ShouldReject_WhenBackgroundModeHasNoTargets()
     {
         var config = new RuntimeConfig(
             MouseButton.Left,
             PressType.Single,
             100,
             ClickMode.Simultaneous,
-            DeliveryMode.Foreground,
+            DeliveryMode.Background,
             false,
             null,
             null!);
@@ -41,7 +41,7 @@ public sealed class RuntimeConfigValidatorTests
         var result = RuntimeConfigValidator.Validate(config);
 
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(error => error.Contains("at least one target"));
+        result.Errors.Should().Contain(error => error.Contains("Background mode requires at least one target"));
     }
 
     [Fact]

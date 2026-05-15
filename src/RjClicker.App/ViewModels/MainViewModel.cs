@@ -78,10 +78,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _maxClicks = 10;
         _totalIntervalMs = 100;
         _currentStatus = "Ready";
-        _startStopModifiers = ModifierKeys.Control;
-        _startStopKey = Key.F12;
-        _recordModifiers = ModifierKeys.Control;
-        _recordKey = Key.F11;
+        _startStopModifiers = ModifierKeys.None;
+        _startStopKey = Key.F3;
+        _recordModifiers = ModifierKeys.None;
+        _recordKey = Key.F4;
 
         PointTargets = new ObservableCollection<PointTargetViewModel>();
         PointTargets.CollectionChanged += OnPointTargetsCollectionChanged;
@@ -90,6 +90,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         StartClickSession = new RelayCommand(_ => StartClickSessionAsync(), _ => !IsRunning);
         StopClickSession = new RelayCommand(_ => StopClickSessionAsync(), _ => IsRunning);
+        ToggleClickSession = new RelayCommand(_ => ToggleClickSessionAsync());
         RecordPoint = new RelayCommand(_ => RecordPointAsync(), _ => !IsRunning);
         AddPoint = new RelayCommand(_ => AddPointAsync(), _ => !IsRunning);
         RemovePoint = new RelayCommand(RemovePointAsync, _ => !IsRunning);
@@ -333,6 +334,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ICommand StopClickSession { get; }
 
+    public ICommand ToggleClickSession { get; }
+
     public ICommand RecordPoint { get; }
 
     public ICommand AddPoint { get; }
@@ -477,6 +480,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
         CurrentStatus = "Stopped";
         NotifySessionStateChanged();
         return Task.CompletedTask;
+    }
+
+    public async Task ToggleClickSessionAsync()
+    {
+        if (IsRunning)
+        {
+            await StopClickSessionAsync();
+            return;
+        }
+
+        _ = StartClickSessionAsync();
     }
 
     private string BuildRunningStatus()

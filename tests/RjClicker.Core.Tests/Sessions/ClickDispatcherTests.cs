@@ -10,10 +10,17 @@ public sealed class ClickDispatcherTests
     private sealed class FakeForegroundClickService : IForegroundClickService
     {
         public int ExecuteClickCalls { get; private set; }
+        public int FallbackExecuteClickCalls { get; private set; }
 
         public Task ExecuteClickAsync(PointTarget target, MouseButton button, PressType pressType)
         {
             ExecuteClickCalls++;
+            return Task.CompletedTask;
+        }
+
+        public Task ExecuteClickAsync(MouseButton button, PressType pressType)
+        {
+            FallbackExecuteClickCalls++;
             return Task.CompletedTask;
         }
     }
@@ -65,6 +72,30 @@ public sealed class ClickDispatcherTests
 
         // Assert
         foregroundService.ExecuteClickCalls.Should().Be(1);
+        foregroundService.FallbackExecuteClickCalls.Should().Be(0);
+        backgroundService.ExecuteClickCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task DispatchAsync_WithForegroundMode_AndNoTargets_UsesFallbackCursorClick()
+    {
+        var foregroundService = new FakeForegroundClickService();
+        var backgroundService = new FakeBackgroundClickService();
+        var dispatcher = new ClickDispatcher(foregroundService, backgroundService);
+        var config = new RuntimeConfig(
+            MouseButton.Left,
+            PressType.Single,
+            100,
+            ClickMode.Simultaneous,
+            DeliveryMode.Foreground,
+            useCounter: false,
+            maxClicks: null,
+            targets: Array.Empty<PointTarget>());
+
+        await dispatcher.DispatchAsync(config, CancellationToken.None);
+
+        foregroundService.ExecuteClickCalls.Should().Be(0);
+        foregroundService.FallbackExecuteClickCalls.Should().Be(1);
         backgroundService.ExecuteClickCalls.Should().Be(0);
     }
 

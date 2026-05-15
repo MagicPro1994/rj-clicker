@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RjClicker.App.Models;
+using RjClicker.App.Infrastructure.Hotkeys;
 using RjClicker.App.Services;
 using RjClicker.App.ViewModels;
 using System.Windows;
@@ -19,6 +20,7 @@ public partial class App : Application
 		_serviceProvider = ServiceRegistration.BuildServiceProvider();
 		var settingsStore = _serviceProvider.GetRequiredService<ISettingsStore>();
 		var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
+		var hotkeyService = _serviceProvider.GetRequiredService<IGlobalHotkeyService>();
 
 		var settings = await settingsStore.LoadAsync();
 		if (settings != null)
@@ -26,7 +28,7 @@ public partial class App : Application
 			ApplySettingsToViewModel(viewModel, settings);
 		}
 
-		var mainWindow = new MainWindow(viewModel);
+		var mainWindow = new MainWindow(viewModel, hotkeyService);
 		mainWindow.Show();
 	}
 

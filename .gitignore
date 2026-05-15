@@ -1,4 +1,5 @@
 *.log
+*.lscache
 
 # .NET build artifacts
 src/**/bin/

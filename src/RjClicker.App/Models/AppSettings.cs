@@ -17,10 +17,10 @@ public sealed class AppSettings
     public bool UseSmartClick { get; set; } = false;
     public bool FreezePointer { get; set; } = false;
     public bool KeepOnTop { get; set; } = false;
-    public string StartStopModifiers { get; set; } = "Control";
-    public string StartStopKey { get; set; } = "F12";
-    public string RecordModifiers { get; set; } = "Control+Alt";
-    public string RecordKey { get; set; } = "R";
+    public string StartStopModifiers { get; set; } = "None";
+    public string StartStopKey { get; set; } = "F3";
+    public string RecordModifiers { get; set; } = "None";
+    public string RecordKey { get; set; } = "F4";
     public List<AppPointTarget> Points { get; set; } = [];
 }
 

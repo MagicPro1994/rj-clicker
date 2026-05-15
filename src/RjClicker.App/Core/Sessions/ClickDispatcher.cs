@@ -42,13 +42,16 @@ public sealed class ClickDispatcher : IClickDispatcher
 
     private async Task ExecuteForegroundClick(RuntimeConfig config, CancellationToken cancellationToken)
     {
+        if (config.Targets.Count == 0)
+        {
+            await _foregroundClickService.ExecuteClickAsync(config.MouseButton, config.PressType);
+            return;
+        }
+
         // For now, execute click on first target if available
         // This will be expanded in Task 6 to handle all targets based on ClickMode
-        if (config.Targets.Count > 0)
-        {
-            var target = config.Targets[0];
-            await _foregroundClickService.ExecuteClickAsync(target, config.MouseButton, config.PressType);
-        }
+        var target = config.Targets[0];
+        await _foregroundClickService.ExecuteClickAsync(target, config.MouseButton, config.PressType);
     }
 
     private async Task ExecuteBackgroundClick(RuntimeConfig config, CancellationToken cancellationToken)

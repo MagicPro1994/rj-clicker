@@ -125,19 +125,40 @@ internal sealed class FakeHotkeyService : IGlobalHotkeyService
     public List<int> UnregisteredHotkeys { get; } = [];
     public ModifierKeys LastRegisteredModifiers { get; private set; }
     public Key LastRegisteredKey { get; private set; }
+    private readonly Dictionary<int, Func<Task>> _callbacks = [];
 
-    public Task RegisterAsync(int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed)
+    public Task RegisterAsync(nint windowHandle, int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed)
     {
         ArgumentNullException.ThrowIfNull(onPressed);
         RegisteredHotkeys.Add(hotkeyId);
         LastRegisteredModifiers = modifiers;
         LastRegisteredKey = key;
+        _callbacks[hotkeyId] = onPressed;
         return Task.CompletedTask;
     }
 
     public Task UnregisterAsync(int hotkeyId)
     {
         UnregisteredHotkeys.Add(hotkeyId);
+        _callbacks.Remove(hotkeyId);
         return Task.CompletedTask;
+    }
+
+    public void HandleHotkeyPressed(int hotkeyId)
+    {
+        if (_callbacks.TryGetValue(hotkeyId, out var callback))
+        {
+            _ = callback();
+        }
+    }
+
+    public Task TriggerHotkeyAsync(int hotkeyId)
+    {
+        if (!_callbacks.TryGetValue(hotkeyId, out var callback))
+        {
+            return Task.CompletedTask;
+        }
+
+        return callback();
     }
 }

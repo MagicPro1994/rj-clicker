@@ -43,6 +43,23 @@ public sealed class PInvokeTests
     }
 
     [Fact]
+    public async Task ForegroundClick_ShouldUseCurrentCursor_WhenTargetIsOmitted()
+    {
+        var fake = new FakeWin32Api
+        {
+            CursorPosition = new NativeMethods.POINT { X = 300, Y = 400 },
+        };
+        var service = new Win32ForegroundClickService(fake);
+
+        await service.ExecuteClickAsync(CoreMouseButton.Left, PressType.Single);
+
+        fake.CursorPositions.Should().ContainSingle().Which.Should().Be((300, 400));
+        fake.SentMouseFlags.Should().ContainInOrder(
+            NativeConstants.MouseEventLeftDown,
+            NativeConstants.MouseEventLeftUp);
+    }
+
+    [Fact]
     public async Task BackgroundClick_ShouldReturnWarning_WhenWindowHandleMissing()
     {
         var fake = new FakeWin32Api();
@@ -93,16 +110,17 @@ public sealed class PInvokeTests
     [Fact]
     public async Task GlobalHotkey_ShouldRegisterAndUnregisterWithNativeApi()
     {
-        var fake = new FakeWin32Api { ForegroundWindow = new nint(777) };
+        var windowHandle = new nint(777);
+        var fake = new FakeWin32Api();
         var service = new Win32GlobalHotkeyService(fake);
 
-        await service.RegisterAsync(7, ModifierKeys.Control | ModifierKeys.Shift, Key.F9, () => Task.CompletedTask);
+        await service.RegisterAsync(windowHandle, 7, ModifierKeys.Control | ModifierKeys.Shift, Key.F9, () => Task.CompletedTask);
         await service.UnregisterAsync(7);
 
         fake.RegisterCalls.Should().ContainSingle();
         fake.RegisterCalls[0].id.Should().Be(7);
-        fake.RegisterCalls[0].window.Should().Be(new nint(777));
-        fake.UnregisterCalls.Should().ContainSingle(call => call.id == 7 && call.window == new nint(777));
+        fake.RegisterCalls[0].window.Should().Be(windowHandle);
+        fake.UnregisterCalls.Should().ContainSingle(call => call.id == 7 && call.window == windowHandle);
     }
 
     [Fact]
@@ -188,11 +206,15 @@ public sealed class PInvokeTests
 
         public nint ForegroundWindow { get; set; } = nint.Zero;
 
+        public NativeMethods.POINT CursorPosition { get; set; }
+
         public nint FindWindowResult { get; set; } = nint.Zero;
 
         public bool GetWindowRectResult { get; set; }
 
         public NativeMethods.RECT RectResult { get; set; }
+
+        public bool GetCursorPosResult { get; set; } = true;
 
         public bool RegisterHotKeyResult { get; set; } = true;
 
@@ -210,6 +232,12 @@ public sealed class PInvokeTests
         {
             CursorPositions.Add((x, y));
             return true;
+        }
+
+        public bool GetCursorPos(out NativeMethods.POINT point)
+        {
+            point = CursorPosition;
+            return GetCursorPosResult;
         }
 
         public uint SendInput(uint inputCount, NativeMethods.INPUT[] inputs, int inputSize)

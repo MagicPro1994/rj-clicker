@@ -43,12 +43,12 @@ public sealed class DependencyInjectionTests : IDisposable
     }
 
     [Fact]
-    public void ServiceRegistration_ShouldCreateNewMainViewModelEachTime()
+    public void ServiceRegistration_ShouldReuseMainViewModelInstance()
     {
         var first = _serviceProvider.GetRequiredService<MainViewModel>();
         var second = _serviceProvider.GetRequiredService<MainViewModel>();
 
-        first.Should().NotBeSameAs(second);
+        first.Should().BeSameAs(second);
     }
 
     [Fact]
@@ -179,10 +179,10 @@ public sealed class DependencyInjectionTests : IDisposable
         settings.UseSmartClick.Should().BeFalse();
         settings.FreezePointer.Should().BeFalse();
         settings.KeepOnTop.Should().BeFalse();
-        settings.StartStopModifiers.Should().Be("Control");
-        settings.StartStopKey.Should().Be("F12");
-        settings.RecordModifiers.Should().Be("Control+Alt");
-        settings.RecordKey.Should().Be("R");
+        settings.StartStopModifiers.Should().Be("None");
+        settings.StartStopKey.Should().Be("F3");
+        settings.RecordModifiers.Should().Be("None");
+        settings.RecordKey.Should().Be("F4");
         settings.Points.Should().BeEmpty();
     }
 }

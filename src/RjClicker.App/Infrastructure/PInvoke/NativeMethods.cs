@@ -6,6 +6,8 @@ public interface IWin32Api
 {
     bool SetCursorPos(int x, int y);
 
+    bool GetCursorPos(out NativeMethods.POINT point);
+
     uint SendInput(uint inputCount, NativeMethods.INPUT[] inputs, int inputSize);
 
     bool PostMessage(nint windowHandle, uint message, nuint wParam, nint lParam);
@@ -36,6 +38,11 @@ public sealed class Win32Api : IWin32Api
     public bool SetCursorPos(int x, int y)
     {
         return NativeMethods.SetCursorPos(x, y);
+    }
+
+    public bool GetCursorPos(out NativeMethods.POINT point)
+    {
+        return NativeMethods.GetCursorPos(out point);
     }
 
     public uint SendInput(uint inputCount, NativeMethods.INPUT[] inputs, int inputSize)
@@ -201,6 +208,10 @@ public static class NativeMethods
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetCursorPos(int x, int y);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool GetCursorPos(out POINT lpPoint);
 
     [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern nint GetModuleHandle(string? lpModuleName);

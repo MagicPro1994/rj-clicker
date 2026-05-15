@@ -1,5 +1,4 @@
 using RjClicker.App.Core.Models;
-using RjClicker.App.Infrastructure.Hotkeys;
 
 namespace RjClicker.App.Core.Sessions;
 
@@ -7,14 +6,12 @@ public sealed class ClickSessionController
 {
     private readonly IClickDispatcher _dispatcher;
     private readonly IClickScheduler _scheduler;
-    private readonly IGlobalHotkeyService _hotkeyService;
     private CancellationTokenSource? _sessionCancellation;
 
-    public ClickSessionController(IClickDispatcher dispatcher, IClickScheduler scheduler, IGlobalHotkeyService hotkeyService)
+    public ClickSessionController(IClickDispatcher dispatcher, IClickScheduler scheduler)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
-        _hotkeyService = hotkeyService ?? throw new ArgumentNullException(nameof(hotkeyService));
     }
 
     public bool IsRunning => _sessionCancellation is not null && !_sessionCancellation.Token.IsCancellationRequested;
@@ -32,13 +29,6 @@ public sealed class ClickSessionController
 
         try
         {
-            // Register hotkey service (ID 1 = start/stop toggle)
-            await _hotkeyService.RegisterAsync(
-                hotkeyId: 1,
-                modifiers: config.StartStopModifiers,
-                key: config.StartStopKey,
-                onPressed: async () => { Stop(); await Task.CompletedTask; });
-
             var clickCount = 0;
 
             await _scheduler.RunAsyncWithAsyncHandler(
@@ -63,9 +53,6 @@ public sealed class ClickSessionController
         }
         finally
         {
-            // Unregister hotkey service
-            await _hotkeyService.UnregisterAsync(hotkeyId: 1);
-
             _sessionCancellation?.Dispose();
             _sessionCancellation = null;
         }

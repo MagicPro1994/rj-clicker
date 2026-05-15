@@ -24,7 +24,22 @@ public sealed class Win32ForegroundClickService : IForegroundClickService
     {
         ArgumentNullException.ThrowIfNull(target);
 
-        _win32Api.SetCursorPos(target.X, target.Y);
+        await ExecuteClickAtPointAsync(target.X, target.Y, button, pressType);
+    }
+
+    public async Task ExecuteClickAsync(MouseButton button, PressType pressType)
+    {
+        if (!_win32Api.GetCursorPos(out var cursorPosition))
+        {
+            throw new InvalidOperationException("Unable to determine current cursor position");
+        }
+
+        await ExecuteClickAtPointAsync(cursorPosition.X, cursorPosition.Y, button, pressType);
+    }
+
+    private async Task ExecuteClickAtPointAsync(int x, int y, MouseButton button, PressType pressType)
+    {
+        _win32Api.SetCursorPos(x, y);
 
         var (downFlag, upFlag) = GetFlags(button);
         var clickCycles = pressType == PressType.Double ? 2 : 1;

@@ -41,13 +41,13 @@ public sealed record RuntimeConfig
 
     public int? MaxClicks { get; init; }
 
-    public ModifierKeys StartStopModifiers { get; init; } = ModifierKeys.Control;
+    public ModifierKeys StartStopModifiers { get; init; } = ModifierKeys.None;
 
-    public Key StartStopKey { get; init; } = Key.F12;
+    public Key StartStopKey { get; init; } = Key.F3;
 
-    public ModifierKeys RecordModifiers { get; init; } = ModifierKeys.Control;
+    public ModifierKeys RecordModifiers { get; init; } = ModifierKeys.None;
 
-    public Key RecordKey { get; init; } = Key.F11;
+    public Key RecordKey { get; init; } = Key.F4;
 
     public bool UseSmartClick { get; init; }
 

@@ -4,6 +4,7 @@ namespace RjClicker.App.Infrastructure.Hotkeys;
 
 public interface IGlobalHotkeyService
 {
-    Task RegisterAsync(int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed);
+    Task RegisterAsync(nint windowHandle, int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed);
     Task UnregisterAsync(int hotkeyId);
+    void HandleHotkeyPressed(int hotkeyId);
 }

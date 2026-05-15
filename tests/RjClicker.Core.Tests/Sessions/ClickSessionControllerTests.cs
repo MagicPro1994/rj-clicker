@@ -1,9 +1,6 @@
 using FluentAssertions;
 using RjClicker.App.Core.Models;
 using RjClicker.App.Core.Sessions;
-using RjClicker.App.Infrastructure.Hotkeys;
-using Key = System.Windows.Input.Key;
-using ModifierKeys = System.Windows.Input.ModifierKeys;
 
 namespace RjClicker.Core.Tests.Sessions;
 
@@ -14,8 +11,7 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 10);
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -38,8 +34,7 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 3);
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -62,8 +57,7 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new RealSchedulerWithDelay();
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -76,20 +70,13 @@ public sealed class ClickSessionControllerTests
             targets: new[] { PointTarget.Absolute(1, 1) });
 
         var startTask = controller.StartAsync(config, CancellationToken.None);
-        
-        // Give it a moment to start
+
         await Task.Delay(10);
-        
-        // Verify session is running
         controller.IsRunning.Should().BeTrue();
 
-        // Stop the session
         controller.Stop();
-
-        // Wait for the session to complete
         await startTask;
 
-        // Verify session is stopped
         controller.IsRunning.Should().BeFalse();
     }
 
@@ -98,8 +85,7 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new SlowFakeScheduler();
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -114,25 +100,21 @@ public sealed class ClickSessionControllerTests
         var cts = new CancellationTokenSource();
         var startTask = controller.StartAsync(config, cts.Token);
 
-        // Give it a moment to start
         await Task.Delay(10);
 
-        // Try to start again while running
         var exception = await Record.ExceptionAsync(() => controller.StartAsync(config, CancellationToken.None));
         exception.Should().BeOfType<InvalidOperationException>();
 
-        // Cleanup
         cts.Cancel();
         await startTask;
     }
 
     [Fact]
-    public async Task IsRunning_ShouldBeFalse_WhenNotStarted()
+    public void IsRunning_ShouldBeFalse_WhenNotStarted()
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 1);
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         controller.IsRunning.Should().BeFalse();
     }
@@ -142,8 +124,7 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new RealSchedulerWithDelay();
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        var controller = new ClickSessionController(dispatcher, scheduler);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -157,7 +138,6 @@ public sealed class ClickSessionControllerTests
 
         var startTask = controller.StartAsync(config, CancellationToken.None);
 
-        // Give it a moment to start
         await Task.Delay(10);
         controller.IsRunning.Should().BeTrue();
 
@@ -167,60 +147,113 @@ public sealed class ClickSessionControllerTests
         controller.IsRunning.Should().BeFalse();
     }
 
-    [Fact]
-    public async Task StartAsync_ShouldRegisterAndUnregisterHotkey_OnSessionLifecycle()
+    private sealed class FakeDispatcher : IClickDispatcher
     {
-        var dispatcher = new FakeDispatcher();
-        var scheduler = new FakeScheduler(maxTicks: 1);
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        public int DispatchCalls { get; private set; }
 
-        var config = new RuntimeConfig(
-            MouseButton.Left,
-            PressType.Single,
-            totalIntervalMilliseconds: 1,
-            ClickMode.Simultaneous,
-            DeliveryMode.Foreground,
-            useCounter: true,
-            maxClicks: 1,
-            targets: new[] { PointTarget.Absolute(1, 1) });
-
-        // Before starting, no hotkeys should be registered
-        hotkeyService.RegisteredHotkeys.Should().BeEmpty();
-        hotkeyService.UnregisteredHotkeys.Should().BeEmpty();
-
-        await controller.StartAsync(config, CancellationToken.None);
-
-        // After session completes, hotkey should be registered and then unregistered
-        hotkeyService.RegisteredHotkeys.Should().ContainSingle().Which.Should().Be(1);
-        hotkeyService.UnregisteredHotkeys.Should().ContainSingle().Which.Should().Be(1);
+        public Task DispatchAsync(RuntimeConfig config, CancellationToken cancellationToken)
+        {
+            DispatchCalls++;
+            return Task.CompletedTask;
+        }
     }
 
-    [Fact]
-    public async Task StartAsync_ShouldRegisterConfiguredStartStopHotkey()
+    private sealed class AsyncFakeDispatcher : IClickDispatcher
     {
-        var dispatcher = new FakeDispatcher();
-        var scheduler = new FakeScheduler(maxTicks: 1);
-        var hotkeyService = new FakeHotkeyService();
-        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+        public int DispatchCalls { get; private set; }
 
-        var config = new RuntimeConfig(
-            MouseButton.Left,
-            PressType.Single,
-            totalIntervalMilliseconds: 1,
-            ClickMode.Simultaneous,
-            DeliveryMode.Foreground,
-            useCounter: true,
-            maxClicks: 1,
-            targets: new[] { PointTarget.Absolute(1, 1) })
+        public async Task DispatchAsync(RuntimeConfig config, CancellationToken cancellationToken)
         {
-            StartStopModifiers = ModifierKeys.Alt | ModifierKeys.Shift,
-            StartStopKey = Key.F8
-        };
+            DispatchCalls++;
+            await Task.Delay(1, cancellationToken);
+        }
+    }
 
-        await controller.StartAsync(config, CancellationToken.None);
+    private sealed class FakeScheduler : IClickScheduler
+    {
+        private readonly int _maxTicks;
 
-        hotkeyService.LastRegisteredModifiers.Should().Be(ModifierKeys.Alt | ModifierKeys.Shift);
-        hotkeyService.LastRegisteredKey.Should().Be(Key.F8);
+        public FakeScheduler(int maxTicks)
+        {
+            _maxTicks = maxTicks;
+        }
+
+        public Task RunAsync(int intervalMilliseconds, Action onTick, CancellationToken cancellationToken)
+        {
+            for (var tick = 0; tick < _maxTicks; tick++)
+            {
+                onTick();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public async Task RunAsyncWithAsyncHandler(int intervalMilliseconds, Func<Task> onTick, CancellationToken cancellationToken)
+        {
+            for (var tick = 0; tick < _maxTicks && !cancellationToken.IsCancellationRequested; tick++)
+            {
+                await onTick();
+            }
+        }
+    }
+
+    private sealed class RealSchedulerWithDelay : IClickScheduler
+    {
+        public async Task RunAsync(int intervalMilliseconds, Action onTick, CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    onTick();
+                    await Task.Delay(intervalMilliseconds, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        public async Task RunAsyncWithAsyncHandler(int intervalMilliseconds, Func<Task> onTick, CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await onTick();
+                    await Task.Delay(intervalMilliseconds, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+    }
+
+    private sealed class SlowFakeScheduler : IClickScheduler
+    {
+        public async Task RunAsync(int intervalMilliseconds, Action onTick, CancellationToken cancellationToken)
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                onTick();
+                await Task.Delay(100, cancellationToken);
+            }
+        }
+
+        public async Task RunAsyncWithAsyncHandler(int intervalMilliseconds, Func<Task> onTick, CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    await onTick();
+                    await Task.Delay(100, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
     }
 }

@@ -30,9 +30,9 @@ public static class RuntimeConfigValidator
             errors.Add("Interval must be at least 1 ms");
         }
 
-        if (config.Targets is null || config.Targets.Count == 0)
+        if (config.DeliveryMode == DeliveryMode.Background && (config.Targets is null || config.Targets.Count == 0))
         {
-            errors.Add("Config must include at least one target");
+            errors.Add("Background mode requires at least one target");
         }
 
         if (config.UseCounter && (!config.MaxClicks.HasValue || config.MaxClicks.Value < 1))

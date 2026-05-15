@@ -24,7 +24,7 @@ public static class ServiceRegistration
         services.AddSingleton<IWindowBindingService, Win32WindowBindingService>();
         services.AddSingleton<ClickSessionController>();
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
-        services.AddTransient<MainViewModel>();
+        services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();
     }
