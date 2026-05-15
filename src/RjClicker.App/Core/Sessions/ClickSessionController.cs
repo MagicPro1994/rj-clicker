@@ -6,6 +6,7 @@ public sealed class ClickSessionController
 {
     private readonly IClickDispatcher _dispatcher;
     private readonly IClickScheduler _scheduler;
+    private CancellationTokenSource? _sessionCancellation;
 
     public ClickSessionController(IClickDispatcher dispatcher, IClickScheduler scheduler)
     {
@@ -13,7 +14,7 @@ public sealed class ClickSessionController
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
     }
 
-    public bool IsRunning { get; private set; }
+    public bool IsRunning => _sessionCancellation is not null && !_sessionCancellation.Token.IsCancellationRequested;
 
     public async Task StartAsync(RuntimeConfig config, CancellationToken cancellationToken)
     {
@@ -24,30 +25,45 @@ public sealed class ClickSessionController
             throw new InvalidOperationException("Session already running");
         }
 
-        IsRunning = true;
-        var clickCount = 0;
+        _sessionCancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-        await _scheduler.RunAsync(
-            config.TotalIntervalMilliseconds,
-            onTick: () =>
-            {
-                if (HasReachedCounterLimit(config, clickCount))
+        try
+        {
+            var clickCount = 0;
+
+            await _scheduler.RunAsyncWithAsyncHandler(
+                config.TotalIntervalMilliseconds,
+                onTick: async () =>
                 {
-                    IsRunning = false;
-                    return;
-                }
+                    if (HasReachedCounterLimit(config, clickCount))
+                    {
+                        _sessionCancellation.Cancel();
+                        return;
+                    }
 
-                _dispatcher.DispatchAsync(config, cancellationToken).GetAwaiter().GetResult();
-                clickCount++;
+                    await _dispatcher.DispatchAsync(config, _sessionCancellation.Token);
+                    clickCount++;
 
-                if (HasReachedCounterLimit(config, clickCount))
-                {
-                    IsRunning = false;
-                }
-            },
-            cancellationToken);
+                    if (HasReachedCounterLimit(config, clickCount))
+                    {
+                        _sessionCancellation.Cancel();
+                    }
+                },
+                _sessionCancellation.Token);
+        }
+        finally
+        {
+            _sessionCancellation?.Dispose();
+            _sessionCancellation = null;
+        }
+    }
 
-        IsRunning = false;
+    public void Stop()
+    {
+        if (IsRunning)
+        {
+            _sessionCancellation?.Cancel();
+        }
     }
 
     private static bool HasReachedCounterLimit(RuntimeConfig config, int clickCount)
