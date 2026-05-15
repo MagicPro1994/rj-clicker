@@ -67,11 +67,31 @@ public sealed class FileAppLoggerTests
     [Fact]
     public async Task LogErrorAsync_ShouldSuppressIoFailures()
     {
-        var logger = new FileAppLogger("invalid\0path.log");
+        var temporaryDirectoryPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(temporaryDirectoryPath);
+        var logPath = Path.Combine(temporaryDirectoryPath, "rjclicker.log");
+        FileStream? lockedLogStream = null;
 
-        var logAction = async () => await logger.LogErrorAsync("App", "probe");
+        try
+        {
+            await File.WriteAllTextAsync(logPath, string.Empty);
+            lockedLogStream = new FileStream(logPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
-        await logAction.Should().NotThrowAsync();
+            var logger = new FileAppLogger(logPath);
+
+            var logAction = async () => await logger.LogErrorAsync("App", "probe");
+
+            await logAction.Should().NotThrowAsync();
+        }
+        finally
+        {
+            lockedLogStream?.Dispose();
+
+            if (Directory.Exists(temporaryDirectoryPath))
+            {
+                Directory.Delete(temporaryDirectoryPath, recursive: true);
+            }
+        }
     }
 
     [Fact]
