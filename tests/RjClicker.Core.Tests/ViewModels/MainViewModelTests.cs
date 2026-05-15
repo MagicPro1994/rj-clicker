@@ -43,6 +43,33 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public void TotalIntervalMs_ShouldClampToZero_WhenSetNegative()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.TotalIntervalMs = -25;
+
+        viewModel.TotalIntervalMs.Should().Be(0);
+        viewModel.HoursPart.Should().Be(0);
+        viewModel.MinutesPart.Should().Be(0);
+        viewModel.SecondsPart.Should().Be(0);
+        viewModel.TenthsPart.Should().Be(0);
+        viewModel.HundredthsPart.Should().Be(0);
+        viewModel.ThousandthsPart.Should().Be(0);
+    }
+
+    [Fact]
+    public void IntervalParts_ShouldClampToZero_WhenNegativeValueEntered()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.HoursPart = -1;
+
+        viewModel.HoursPart.Should().Be(0);
+        viewModel.TotalIntervalMs.Should().Be(100);
+    }
+
+    [Fact]
     public void ShouldRaisePropertyChanged_ForTotalIntervalMs_WhenSecondsPartChanges()
     {
         var viewModel = CreateViewModel();

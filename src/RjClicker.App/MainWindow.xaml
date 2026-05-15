@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:validation="clr-namespace:RjClicker.App.Validation"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="RjClicker"
@@ -100,23 +101,78 @@
                                    Margin="0,0,0,8" />
 
                         <WrapPanel Margin="0,0,0,6" VerticalAlignment="Center">
-                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding HoursPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="44" Margin="0,0,4,0">
+                                <TextBox.Text>
+                                    <Binding Path="HoursPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                             <TextBlock Text=":" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding MinutesPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="44" Margin="0,0,4,0">
+                                <TextBox.Text>
+                                    <Binding Path="MinutesPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                             <TextBlock Text=":" Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding SecondsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="44" Margin="0,0,4,0">
+                                <TextBox.Text>
+                                    <Binding Path="SecondsPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                             <TextBlock Text="." Margin="0,0,4,0" VerticalAlignment="Center" />
-                            <TextBox Width="34" Margin="0,0,4,0" Text="{Binding TenthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Width="34" Margin="0,0,4,0" Text="{Binding HundredthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                            <TextBox Width="34" Margin="0,0,8,0" Text="{Binding ThousandthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="34" Margin="0,0,4,0">
+                                <TextBox.Text>
+                                    <Binding Path="TenthsPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                            <TextBox Width="34" Margin="0,0,4,0">
+                                <TextBox.Text>
+                                    <Binding Path="HundredthsPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
+                            <TextBox Width="34" Margin="0,0,8,0">
+                                <TextBox.Text>
+                                    <Binding Path="ThousandthsPart" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                             <TextBlock Text="(H:MM:SS.hh)" VerticalAlignment="Center" Foreground="#FF5E5E5E" />
                         </WrapPanel>
 
                         <WrapPanel VerticalAlignment="Center" Margin="0,0,0,6">
                             <TextBlock Text="Manual ms:" VerticalAlignment="Center" Margin="0,0,8,0" />
                             <TextBox Width="120"
-                                     Margin="0,0,10,0"
-                                     Text="{Binding TotalIntervalMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                     Margin="0,0,10,0">
+                                <TextBox.Text>
+                                    <Binding Path="TotalIntervalMs" Mode="TwoWay" UpdateSourceTrigger="PropertyChanged" NotifyOnValidationError="True">
+                                        <Binding.ValidationRules>
+                                            <validation:NonNegativeIntegerValidationRule />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                             <TextBlock Text="{Binding TotalIntervalMs, StringFormat=Total: {0} ms}"
                                        VerticalAlignment="Center"
                                        FontWeight="SemiBold"

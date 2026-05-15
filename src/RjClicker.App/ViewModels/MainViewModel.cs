@@ -200,7 +200,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         get => _totalIntervalMs;
         set
         {
-            if (!SetField(ref _totalIntervalMs, value))
+            var normalizedValue = Math.Max(0, value);
+            if (!SetField(ref _totalIntervalMs, normalizedValue))
             {
                 return;
             }
@@ -210,7 +211,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return;
             }
 
-            SyncPartsFromTotal(value);
+            SyncPartsFromTotal(normalizedValue);
         }
     }
 
@@ -378,18 +379,37 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         try
         {
+            var hours = NormalizeNonNegativeIntervalPart(ref _hoursPart, nameof(HoursPart));
+            var minutes = NormalizeNonNegativeIntervalPart(ref _minutesPart, nameof(MinutesPart));
+            var seconds = NormalizeNonNegativeIntervalPart(ref _secondsPart, nameof(SecondsPart));
+            var tenths = NormalizeNonNegativeIntervalPart(ref _tenthsPart, nameof(TenthsPart));
+            var hundredths = NormalizeNonNegativeIntervalPart(ref _hundredthsPart, nameof(HundredthsPart));
+            var thousandths = NormalizeNonNegativeIntervalPart(ref _thousandthsPart, nameof(ThousandthsPart));
+
             TotalIntervalMs = IntervalConverter.ToMilliseconds(new IntervalParts(
-                HoursPart,
-                MinutesPart,
-                SecondsPart,
-                TenthsPart,
-                HundredthsPart,
-                ThousandthsPart));
+                hours,
+                minutes,
+                seconds,
+                tenths,
+                hundredths,
+                thousandths));
         }
         finally
         {
             _isSyncingInterval = false;
         }
+    }
+
+    private int NormalizeNonNegativeIntervalPart(ref int partField, string propertyName)
+    {
+        if (partField >= 0)
+        {
+            return partField;
+        }
+
+        partField = 0;
+        OnPropertyChanged(propertyName);
+        return 0;
     }
 
     private void SyncPartsFromTotal(int milliseconds)
