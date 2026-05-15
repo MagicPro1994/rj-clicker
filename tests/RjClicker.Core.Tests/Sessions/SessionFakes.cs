@@ -123,11 +123,15 @@ internal sealed class FakeHotkeyService : IGlobalHotkeyService
 {
     public List<int> RegisteredHotkeys { get; } = [];
     public List<int> UnregisteredHotkeys { get; } = [];
+    public ModifierKeys LastRegisteredModifiers { get; private set; }
+    public Key LastRegisteredKey { get; private set; }
 
     public Task RegisterAsync(int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed)
     {
         ArgumentNullException.ThrowIfNull(onPressed);
         RegisteredHotkeys.Add(hotkeyId);
+        LastRegisteredModifiers = modifiers;
+        LastRegisteredKey = key;
         return Task.CompletedTask;
     }
 

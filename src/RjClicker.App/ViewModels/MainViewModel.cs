@@ -9,6 +9,8 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Key = System.Windows.Input.Key;
+using ModifierKeys = System.Windows.Input.ModifierKeys;
 using ICommand = System.Windows.Input.ICommand;
 
 namespace RjClicker.App.ViewModels;
@@ -35,6 +37,14 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _totalIntervalMs;
     private int _clickCount;
     private string _currentStatus;
+    private ModifierKeys _startStopModifiers;
+    private Key _startStopKey;
+    private ModifierKeys _recordModifiers;
+    private Key _recordKey;
+    private bool _useSmartClick;
+    private bool _freezePointer;
+    private bool _keepOnTop;
+    private bool _isWindowHidden;
 
     public MainViewModel(
         ClickSessionController clickSessionController,
@@ -50,6 +60,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ClickModes = Enum.GetValues<ClickMode>();
         DeliveryModes = Enum.GetValues<DeliveryMode>();
         TargetTypes = Enum.GetValues<TargetType>();
+        HotkeyModifiers =
+        [
+            ModifierKeys.None,
+            ModifierKeys.Control,
+            ModifierKeys.Shift,
+            ModifierKeys.Alt,
+            ModifierKeys.Windows,
+        ];
+        HotkeyKeys = BuildSupportedHotkeyKeys();
 
         _selectedMouseButton = MouseButtons[0];
         _selectedPressType = PressTypes[0];
@@ -59,6 +78,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _maxClicks = 10;
         _totalIntervalMs = 100;
         _currentStatus = "Ready";
+        _startStopModifiers = ModifierKeys.Control;
+        _startStopKey = Key.F12;
+        _recordModifiers = ModifierKeys.Control;
+        _recordKey = Key.F11;
 
         PointTargets = new ObservableCollection<PointTargetViewModel>();
         PointTargets.CollectionChanged += OnPointTargetsCollectionChanged;
@@ -71,6 +94,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         AddPoint = new RelayCommand(_ => AddPointAsync(), _ => !IsRunning);
         RemovePoint = new RelayCommand(RemovePointAsync, _ => !IsRunning);
         ClearPoints = new RelayCommand(_ => ClearPointsAsync(), _ => !IsRunning && PointTargets.Count > 0);
+        MovePointUp = new RelayCommand(MovePointUpAsync, parameter => !IsRunning && CanMovePoint(parameter, isMoveUp: true));
+        MovePointDown = new RelayCommand(MovePointDownAsync, parameter => !IsRunning && CanMovePoint(parameter, isMoveUp: false));
+        HideShowWindowCommand = new RelayCommand(_ => ToggleWindowVisibilityAsync());
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -84,6 +110,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public IReadOnlyList<DeliveryMode> DeliveryModes { get; }
 
     public IReadOnlyList<TargetType> TargetTypes { get; }
+
+    public IReadOnlyList<ModifierKeys> HotkeyModifiers { get; }
+
+    public IReadOnlyList<Key> HotkeyKeys { get; }
 
     public ObservableCollection<PointTargetViewModel> PointTargets { get; }
 
@@ -215,6 +245,90 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    public ModifierKeys StartStopModifiers
+    {
+        get => _startStopModifiers;
+        set
+        {
+            if (SetField(ref _startStopModifiers, value))
+            {
+                OnPropertyChanged(nameof(StartStopHotkeyDisplay));
+            }
+        }
+    }
+
+    public Key StartStopKey
+    {
+        get => _startStopKey;
+        set
+        {
+            if (SetField(ref _startStopKey, value))
+            {
+                OnPropertyChanged(nameof(StartStopHotkeyDisplay));
+            }
+        }
+    }
+
+    public ModifierKeys RecordModifiers
+    {
+        get => _recordModifiers;
+        set
+        {
+            if (SetField(ref _recordModifiers, value))
+            {
+                OnPropertyChanged(nameof(RecordHotkeyDisplay));
+            }
+        }
+    }
+
+    public Key RecordKey
+    {
+        get => _recordKey;
+        set
+        {
+            if (SetField(ref _recordKey, value))
+            {
+                OnPropertyChanged(nameof(RecordHotkeyDisplay));
+            }
+        }
+    }
+
+    public bool UseSmartClick
+    {
+        get => _useSmartClick;
+        set => SetField(ref _useSmartClick, value);
+    }
+
+    public bool FreezePointer
+    {
+        get => _freezePointer;
+        set => SetField(ref _freezePointer, value);
+    }
+
+    public bool KeepOnTop
+    {
+        get => _keepOnTop;
+        set => SetField(ref _keepOnTop, value);
+    }
+
+    public bool IsWindowHidden
+    {
+        get => _isWindowHidden;
+        private set
+        {
+            if (SetField(ref _isWindowHidden, value))
+            {
+                OnPropertyChanged(nameof(HideShowWindowText));
+            }
+        }
+    }
+
+    public string HideShowWindowText => IsWindowHidden ? "Show" : "Hide";
+
+    public string StartStopHotkeyDisplay => BuildHotkeyDisplay(StartStopModifiers, StartStopKey);
+
+    public string RecordHotkeyDisplay => BuildHotkeyDisplay(RecordModifiers, RecordKey);
+
     public ICommand StartClickSession { get; }
 
     public ICommand StopClickSession { get; }
@@ -226,6 +340,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand RemovePoint { get; }
 
     public ICommand ClearPoints { get; }
+
+    public ICommand MovePointUp { get; }
+
+    public ICommand MovePointDown { get; }
+
+    public ICommand HideShowWindowCommand { get; }
 
     public bool IsRunning => _clickSessionController.IsRunning;
 
@@ -262,6 +382,46 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         PointTargets.Clear();
         return Task.CompletedTask;
+    }
+
+    private Task ToggleWindowVisibilityAsync()
+    {
+        IsWindowHidden = !IsWindowHidden;
+        return Task.CompletedTask;
+    }
+
+    private Task MovePointUpAsync(object? parameter)
+    {
+        MovePoint(parameter, -1);
+        return Task.CompletedTask;
+    }
+
+    private Task MovePointDownAsync(object? parameter)
+    {
+        MovePoint(parameter, 1);
+        return Task.CompletedTask;
+    }
+
+    private void MovePoint(object? parameter, int offset)
+    {
+        if (parameter is not PointTargetViewModel target)
+        {
+            return;
+        }
+
+        var currentIndex = PointTargets.IndexOf(target);
+        if (currentIndex < 0)
+        {
+            return;
+        }
+
+        var destinationIndex = currentIndex + offset;
+        if (destinationIndex < 0 || destinationIndex >= PointTargets.Count)
+        {
+            return;
+        }
+
+        PointTargets.Move(currentIndex, destinationIndex);
     }
 
     private async Task RecordPointAsync()
@@ -348,7 +508,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
             deliveryMode: SelectedDeliveryMode,
             useCounter: UseCounter,
             maxClicks: UseCounter ? MaxClicks : null,
-            targets: targets);
+            targets: targets)
+        {
+            StartStopModifiers = StartStopModifiers,
+            StartStopKey = StartStopKey,
+            RecordModifiers = RecordModifiers,
+            RecordKey = RecordKey,
+            UseSmartClick = UseSmartClick,
+            FreezePointer = FreezePointer,
+        };
     }
 
     private void AddPointInternal(TargetType targetType, int x, int y, nint? windowId)
@@ -366,6 +534,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         ((RelayCommand)ClearPoints).RaiseCanExecuteChanged();
         ((RelayCommand)RemovePoint).RaiseCanExecuteChanged();
+        ((RelayCommand)MovePointUp).RaiseCanExecuteChanged();
+        ((RelayCommand)MovePointDown).RaiseCanExecuteChanged();
     }
 
     private void SyncTotalFromParts()
@@ -448,6 +618,53 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ((RelayCommand)RecordPoint).RaiseCanExecuteChanged();
         ((RelayCommand)RemovePoint).RaiseCanExecuteChanged();
         ((RelayCommand)ClearPoints).RaiseCanExecuteChanged();
+        ((RelayCommand)MovePointUp).RaiseCanExecuteChanged();
+        ((RelayCommand)MovePointDown).RaiseCanExecuteChanged();
+    }
+
+    private bool CanMovePoint(object? parameter, bool isMoveUp)
+    {
+        if (parameter is not PointTargetViewModel target)
+        {
+            return false;
+        }
+
+        var index = PointTargets.IndexOf(target);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        return isMoveUp ? index > 0 : index < PointTargets.Count - 1;
+    }
+
+    private static IReadOnlyList<Key> BuildSupportedHotkeyKeys()
+    {
+        var keys = new List<Key>();
+
+        for (var key = Key.F1; key <= Key.F12; key++)
+        {
+            keys.Add(key);
+        }
+
+        for (var key = Key.A; key <= Key.Z; key++)
+        {
+            keys.Add(key);
+        }
+
+        for (var key = Key.D0; key <= Key.D9; key++)
+        {
+            keys.Add(key);
+        }
+
+        return keys;
+    }
+
+    private static string BuildHotkeyDisplay(ModifierKeys modifiers, Key key)
+    {
+        return modifiers == ModifierKeys.None
+            ? key.ToString()
+            : $"{modifiers}+{key}";
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

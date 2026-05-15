@@ -1,5 +1,7 @@
 namespace RjClicker.App.Core.Models;
 
+using System.Windows.Input;
+
 public sealed record RuntimeConfig
 {
     private static readonly IReadOnlyList<PointTarget> EmptyTargets = Array.Empty<PointTarget>();
@@ -38,6 +40,18 @@ public sealed record RuntimeConfig
     public bool UseCounter { get; init; }
 
     public int? MaxClicks { get; init; }
+
+    public ModifierKeys StartStopModifiers { get; init; } = ModifierKeys.Control;
+
+    public Key StartStopKey { get; init; } = Key.F12;
+
+    public ModifierKeys RecordModifiers { get; init; } = ModifierKeys.Control;
+
+    public Key RecordKey { get; init; } = Key.F11;
+
+    public bool UseSmartClick { get; init; }
+
+    public bool FreezePointer { get; init; }
 
     public IReadOnlyList<PointTarget> Targets
     {

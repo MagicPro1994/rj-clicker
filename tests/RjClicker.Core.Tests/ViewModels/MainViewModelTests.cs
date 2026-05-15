@@ -6,6 +6,7 @@ using RjClicker.App.Infrastructure.Points;
 using RjClicker.App.Infrastructure.Windows;
 using RjClicker.App.ViewModels;
 using System.Windows;
+using System.Windows.Input;
 using RjClicker.Core.Tests.Sessions;
 
 namespace RjClicker.Core.Tests.ViewModels;
@@ -156,6 +157,76 @@ public sealed class MainViewModelTests
         viewModel.RemovePoint.Execute(target);
 
         viewModel.PointTargets.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void HideShowWindowCommand_ShouldToggleWindowVisibilityState()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.HideShowWindowText.Should().Be("Hide");
+        viewModel.IsWindowHidden.Should().BeFalse();
+
+        viewModel.HideShowWindowCommand.Execute(null);
+
+        viewModel.HideShowWindowText.Should().Be("Show");
+        viewModel.IsWindowHidden.Should().BeTrue();
+
+        viewModel.HideShowWindowCommand.Execute(null);
+
+        viewModel.HideShowWindowText.Should().Be("Hide");
+        viewModel.IsWindowHidden.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MovePointCommands_ShouldReorderPointTargets()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.AddPoint.Execute(null);
+        viewModel.AddPoint.Execute(null);
+        viewModel.AddPoint.Execute(null);
+
+        viewModel.PointTargets[0].X = 10;
+        viewModel.PointTargets[1].X = 20;
+        viewModel.PointTargets[2].X = 30;
+
+        viewModel.MovePointDown.Execute(viewModel.PointTargets[0]);
+
+        viewModel.PointTargets.Select(point => point.X).Should().Equal(20, 10, 30);
+
+        viewModel.MovePointUp.Execute(viewModel.PointTargets[2]);
+
+        viewModel.PointTargets.Select(point => point.X).Should().Equal(20, 30, 10);
+    }
+
+    [Fact]
+    public void HotkeySelections_ShouldBeConfigurable()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.StartStopModifiers = ModifierKeys.Alt | ModifierKeys.Shift;
+        viewModel.StartStopKey = Key.F9;
+        viewModel.RecordModifiers = ModifierKeys.Control;
+        viewModel.RecordKey = Key.F8;
+
+        viewModel.StartStopModifiers.Should().Be(ModifierKeys.Alt | ModifierKeys.Shift);
+        viewModel.StartStopKey.Should().Be(Key.F9);
+        viewModel.RecordModifiers.Should().Be(ModifierKeys.Control);
+        viewModel.RecordKey.Should().Be(Key.F8);
+    }
+
+    [Fact]
+    public void OptionFlags_ShouldBeToggleable()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.UseSmartClick = true;
+        viewModel.FreezePointer = true;
+        viewModel.KeepOnTop = true;
+
+        viewModel.UseSmartClick.Should().BeTrue();
+        viewModel.FreezePointer.Should().BeTrue();
+        viewModel.KeepOnTop.Should().BeTrue();
     }
 
     private static MainViewModel CreateViewModel(

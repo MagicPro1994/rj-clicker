@@ -35,8 +35,8 @@ public sealed class ClickSessionController
             // Register hotkey service (ID 1 = start/stop toggle)
             await _hotkeyService.RegisterAsync(
                 hotkeyId: 1,
-                modifiers: System.Windows.Input.ModifierKeys.Control,
-                key: System.Windows.Input.Key.F12,
+                modifiers: config.StartStopModifiers,
+                key: config.StartStopKey,
                 onPressed: async () => { Stop(); await Task.CompletedTask; });
 
             var clickCount = 0;
