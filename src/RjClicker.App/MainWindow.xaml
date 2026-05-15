@@ -3,10 +3,212 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:RjClicker.App"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="RjClicker"
+        Height="760"
+        Width="1040"
+        MinHeight="680"
+        MinWidth="920"
+        Background="#FFF4F2EA">
+    <DockPanel LastChildFill="True" Margin="16">
+        <Border DockPanel.Dock="Bottom"
+                Margin="0,8,0,0"
+                Padding="10"
+                Background="#FFE7DCC8"
+                CornerRadius="8">
+            <DockPanel>
+                <TextBlock Text="Hot Key: Ctrl+F12 (Start/Stop)"
+                           FontWeight="SemiBold"
+                           Foreground="#FF4B3C2A"
+                           DockPanel.Dock="Right" />
+                <TextBlock Text="{Binding CurrentStatus}"
+                           Foreground="#FF2A2A2A"
+                           FontSize="13" />
+            </DockPanel>
+        </Border>
 
-    </Grid>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0"
+                    Padding="14"
+                    Margin="0,0,0,8"
+                    Background="#FFFDF8EE"
+                    BorderBrush="#FFDBC9AA"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                        <TextBlock Text="Mouse Button" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <ComboBox ItemsSource="{Binding MouseButtons}"
+                                  SelectedItem="{Binding SelectedMouseButton, Mode=TwoWay}"
+                                  MinWidth="140" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" Margin="0,0,10,0">
+                        <TextBlock Text="Press Type" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <ComboBox ItemsSource="{Binding PressTypes}"
+                                  SelectedItem="{Binding SelectedPressType, Mode=TwoWay}"
+                                  MinWidth="140" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="2" Margin="0,0,10,0">
+                        <TextBlock Text="Click Mode" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <ComboBox ItemsSource="{Binding ClickModes}"
+                                  SelectedItem="{Binding SelectedClickMode, Mode=TwoWay}"
+                                  MinWidth="140" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="3">
+                        <TextBlock Text="Delivery Mode" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <ComboBox ItemsSource="{Binding DeliveryModes}"
+                                  SelectedItem="{Binding SelectedDeliveryMode, Mode=TwoWay}"
+                                  MinWidth="140" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2.3*" />
+                    <ColumnDefinition Width="1.2*" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        Padding="14"
+                        Margin="0,0,8,0"
+                        Background="#FFFDF8EE"
+                        BorderBrush="#FFDBC9AA"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock Text="Interval"
+                                   FontWeight="SemiBold"
+                                   FontSize="14"
+                                   Margin="0,0,0,8" />
+
+                        <WrapPanel Margin="0,0,0,6" VerticalAlignment="Center">
+                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding HoursPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text=":" Margin="0,0,4,0" VerticalAlignment="Center" />
+                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding MinutesPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text=":" Margin="0,0,4,0" VerticalAlignment="Center" />
+                            <TextBox Width="44" Margin="0,0,4,0" Text="{Binding SecondsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="." Margin="0,0,4,0" VerticalAlignment="Center" />
+                            <TextBox Width="34" Margin="0,0,4,0" Text="{Binding TenthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="34" Margin="0,0,4,0" Text="{Binding HundredthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBox Width="34" Margin="0,0,8,0" Text="{Binding ThousandthsPart, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="(H:MM:SS.hh)" VerticalAlignment="Center" Foreground="#FF5E5E5E" />
+                        </WrapPanel>
+
+                        <WrapPanel VerticalAlignment="Center" Margin="0,0,0,6">
+                            <TextBlock Text="Manual ms:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Width="120"
+                                     Margin="0,0,10,0"
+                                     Text="{Binding TotalIntervalMs, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Text="{Binding TotalIntervalMs, StringFormat=Total: {0} ms}"
+                                       VerticalAlignment="Center"
+                                       FontWeight="SemiBold"
+                                       Foreground="#FF4B3C2A" />
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1"
+                        Padding="14"
+                        Background="#FFFDF8EE"
+                        BorderBrush="#FFDBC9AA"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <StackPanel>
+                        <TextBlock Text="Counter" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" />
+                        <CheckBox Content="Stop on count"
+                                  IsChecked="{Binding UseCounter, Mode=TwoWay}"
+                                  Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Max clicks:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Width="96"
+                                     IsEnabled="{Binding UseCounter}"
+                                     Text="{Binding MaxClicks, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Border Grid.Row="2"
+                    Padding="14"
+                    Margin="0,0,0,8"
+                    Background="#FFFDF8EE"
+                    BorderBrush="#FFDBC9AA"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Button Content="Add Point" Command="{Binding AddPoint}" Margin="0,0,8,0" Padding="10,4" />
+                            <Button Content="Record Point" Command="{Binding RecordPoint}" Padding="10,4" />
+                        </StackPanel>
+                        <TextBlock Text="Point Targets"
+                                   VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   FontSize="14" />
+                    </DockPanel>
+
+                    <DataGrid Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              ItemsSource="{Binding PointTargets}"
+                              CanUserAddRows="False"
+                              HeadersVisibility="Column"
+                              IsReadOnly="False"
+                              GridLinesVisibility="Horizontal">
+                        <DataGrid.Columns>
+                            <DataGridComboBoxColumn Header="Type"
+                                                    Width="170"
+                                                    SelectedItemBinding="{Binding TargetType, Mode=TwoWay}"
+                                                    ItemsSource="{Binding DataContext.TargetTypes, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <DataGridTextColumn Header="X" Binding="{Binding X, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="90" />
+                            <DataGridTextColumn Header="Y" Binding="{Binding Y, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="90" />
+                            <DataGridTextColumn Header="Window ID" Binding="{Binding WindowId, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="140" />
+                            <DataGridTextColumn Header="Display" Binding="{Binding DisplayText}" Width="*" IsReadOnly="True" />
+                            <DataGridTemplateColumn Header="Action" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Delete" Command="{Binding Delete}" Padding="8,2" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+
+            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="Clicks:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock Text="{Binding ClickCount}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,24,0" />
+                <Button Content="Start"
+                        Command="{Binding StartClickSession}"
+                        Padding="14,6"
+                        Margin="0,0,8,0" />
+                <Button Content="Stop"
+                        Command="{Binding StopClickSession}"
+                        Padding="14,6" />
+            </StackPanel>
+        </Grid>
+    </DockPanel>
 </Window>
