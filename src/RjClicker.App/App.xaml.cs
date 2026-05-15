@@ -170,7 +170,10 @@ public partial class App : Application
 		{
 			_ = _appExceptionLogger.LogDispatcherUnhandledExceptionAsync(e.Exception);
 		}
-		catch { }
+		catch
+		{
+			// Suppress logging failures — must not crash the exception handler itself
+		}
 		e.Handled = true;
 	}
 
@@ -181,7 +184,10 @@ public partial class App : Application
 		{
 			_ = _appExceptionLogger.LogUnhandledExceptionAsync(exception);
 		}
-		catch { }
+		catch
+		{
+			// Suppress logging failures — must not crash the exception handler itself
+		}
 	}
 
 	private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
@@ -190,7 +196,10 @@ public partial class App : Application
 		{
 			_ = _appExceptionLogger.LogUnobservedTaskExceptionAsync(e.Exception);
 		}
-		catch { }
+		catch
+		{
+			// Suppress logging failures — must not crash the exception handler itself
+		}
 		e.SetObserved();
 	}
 }
