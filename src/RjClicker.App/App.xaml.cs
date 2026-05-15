@@ -164,22 +164,34 @@ public partial class App : Application
 		return string.Join("+", parts);
 	}
 
-	private async void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+	private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 	{
-		await _appExceptionLogger?.LogDispatcherUnhandledExceptionAsync(e.Exception)!;
-	}
-
-	private async void OnCurrentDomainUnhandledException(object? sender, UnhandledExceptionEventArgs e)
-	{
-		if (e.ExceptionObject is Exception exception)
+		try
 		{
-			await _appExceptionLogger?.LogUnhandledExceptionAsync(exception)!;
+			_ = _appExceptionLogger.LogDispatcherUnhandledExceptionAsync(e.Exception);
 		}
+		catch { }
+		e.Handled = true;
 	}
 
-	private async void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+	private void OnCurrentDomainUnhandledException(object? sender, UnhandledExceptionEventArgs e)
 	{
-		await _appExceptionLogger?.LogUnobservedTaskExceptionAsync(e.Exception)!;
+		if (e.ExceptionObject is not Exception exception) return;
+		try
+		{
+			_ = _appExceptionLogger.LogUnhandledExceptionAsync(exception);
+		}
+		catch { }
+	}
+
+	private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+	{
+		try
+		{
+			_ = _appExceptionLogger.LogUnobservedTaskExceptionAsync(e.Exception);
+		}
+		catch { }
+		e.SetObserved();
 	}
 }
 
