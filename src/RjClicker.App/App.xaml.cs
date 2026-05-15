@@ -166,9 +166,14 @@ public partial class App : Application
 
 	private void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
 	{
+		if (e == null) return;
+
+		var appExceptionLogger = _appExceptionLogger;
+		if (appExceptionLogger == null) return;
+
 		try
 		{
-			_ = _appExceptionLogger.LogDispatcherUnhandledExceptionAsync(e.Exception);
+			_ = appExceptionLogger.LogDispatcherUnhandledExceptionAsync(e.Exception);
 		}
 		catch
 		{
@@ -179,10 +184,15 @@ public partial class App : Application
 
 	private void OnCurrentDomainUnhandledException(object? sender, UnhandledExceptionEventArgs e)
 	{
+		if (e == null) return;
+
 		if (e.ExceptionObject is not Exception exception) return;
+		var appExceptionLogger = _appExceptionLogger;
+		if (appExceptionLogger == null) return;
+
 		try
 		{
-			_ = _appExceptionLogger.LogUnhandledExceptionAsync(exception);
+			_ = appExceptionLogger.LogUnhandledExceptionAsync(exception);
 		}
 		catch
 		{
@@ -192,9 +202,14 @@ public partial class App : Application
 
 	private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
 	{
+		if (e == null) return;
+
+		var appExceptionLogger = _appExceptionLogger;
+		if (appExceptionLogger == null) return;
+
 		try
 		{
-			_ = _appExceptionLogger.LogUnobservedTaskExceptionAsync(e.Exception);
+			_ = appExceptionLogger.LogUnobservedTaskExceptionAsync(e.Exception);
 		}
 		catch
 		{
