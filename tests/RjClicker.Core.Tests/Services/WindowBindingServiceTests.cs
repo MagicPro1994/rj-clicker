@@ -1,5 +1,5 @@
 using FluentAssertions;
-using RjClicker.App.Core.Services;
+using RjClicker.App.Infrastructure.Windows;
 using System.Windows;
 
 namespace RjClicker.Core.Tests.Services;

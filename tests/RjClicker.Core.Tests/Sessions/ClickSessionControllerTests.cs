@@ -1,6 +1,7 @@
 using FluentAssertions;
 using RjClicker.App.Core.Models;
 using RjClicker.App.Core.Sessions;
+using RjClicker.App.Infrastructure.Hotkeys;
 
 namespace RjClicker.Core.Tests.Sessions;
 
@@ -11,7 +12,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 10);
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -34,7 +36,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 3);
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -57,7 +60,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new RealSchedulerWithDelay();
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -92,7 +96,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new SlowFakeScheduler();
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -124,7 +129,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new FakeDispatcher();
         var scheduler = new FakeScheduler(maxTicks: 1);
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         controller.IsRunning.Should().BeFalse();
     }
@@ -134,7 +140,8 @@ public sealed class ClickSessionControllerTests
     {
         var dispatcher = new AsyncFakeDispatcher();
         var scheduler = new RealSchedulerWithDelay();
-        var controller = new ClickSessionController(dispatcher, scheduler);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
 
         var config = new RuntimeConfig(
             MouseButton.Left,
@@ -156,5 +163,34 @@ public sealed class ClickSessionControllerTests
         await startTask;
 
         controller.IsRunning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartAsync_ShouldRegisterAndUnregisterHotkey_OnSessionLifecycle()
+    {
+        var dispatcher = new FakeDispatcher();
+        var scheduler = new FakeScheduler(maxTicks: 1);
+        var hotkeyService = new FakeHotkeyService();
+        var controller = new ClickSessionController(dispatcher, scheduler, hotkeyService);
+
+        var config = new RuntimeConfig(
+            MouseButton.Left,
+            PressType.Single,
+            totalIntervalMilliseconds: 1,
+            ClickMode.Simultaneous,
+            DeliveryMode.Foreground,
+            useCounter: true,
+            maxClicks: 1,
+            targets: new[] { PointTarget.Absolute(1, 1) });
+
+        // Before starting, no hotkeys should be registered
+        hotkeyService.RegisteredHotkeys.Should().BeEmpty();
+        hotkeyService.UnregisteredHotkeys.Should().BeEmpty();
+
+        await controller.StartAsync(config, CancellationToken.None);
+
+        // After session completes, hotkey should be registered and then unregistered
+        hotkeyService.RegisteredHotkeys.Should().ContainSingle().Which.Should().Be(1);
+        hotkeyService.UnregisteredHotkeys.Should().ContainSingle().Which.Should().Be(1);
     }
 }

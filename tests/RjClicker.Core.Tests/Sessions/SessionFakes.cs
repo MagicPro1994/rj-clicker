@@ -1,5 +1,7 @@
 using RjClicker.App.Core.Models;
 using RjClicker.App.Core.Sessions;
+using RjClicker.App.Infrastructure.Hotkeys;
+using System.Windows.Input;
 
 namespace RjClicker.Core.Tests.Sessions;
 
@@ -114,5 +116,24 @@ internal sealed class SlowFakeScheduler : IClickScheduler
         {
             // Expected
         }
+    }
+}
+
+internal sealed class FakeHotkeyService : IGlobalHotkeyService
+{
+    public List<int> RegisteredHotkeys { get; } = [];
+    public List<int> UnregisteredHotkeys { get; } = [];
+
+    public Task RegisterAsync(int hotkeyId, ModifierKeys modifiers, Key key, Func<Task> onPressed)
+    {
+        ArgumentNullException.ThrowIfNull(onPressed);
+        RegisteredHotkeys.Add(hotkeyId);
+        return Task.CompletedTask;
+    }
+
+    public Task UnregisterAsync(int hotkeyId)
+    {
+        UnregisteredHotkeys.Add(hotkeyId);
+        return Task.CompletedTask;
     }
 }

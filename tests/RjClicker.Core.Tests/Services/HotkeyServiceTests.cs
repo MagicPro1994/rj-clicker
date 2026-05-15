@@ -1,5 +1,5 @@
 using FluentAssertions;
-using RjClicker.App.Core.Services;
+using RjClicker.App.Infrastructure.Hotkeys;
 using System.Windows.Input;
 
 namespace RjClicker.Core.Tests.Services;
