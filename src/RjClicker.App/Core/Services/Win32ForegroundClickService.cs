@@ -1,7 +1,7 @@
 using RjClicker.App.Core.Models;
 using RjClicker.App.Core.Services;
 
-namespace RjClicker.App.Core.Sessions;
+namespace RjClicker.App.Core.Services;
 
 public sealed class Win32ForegroundClickService : IForegroundClickService
 {
