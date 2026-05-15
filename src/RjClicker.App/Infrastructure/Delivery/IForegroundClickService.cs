@@ -1,6 +1,6 @@
 using RjClicker.App.Core.Models;
 
-namespace RjClicker.App.Core.Services;
+namespace RjClicker.App.Infrastructure.Delivery;
 
 public interface IForegroundClickService
 {
