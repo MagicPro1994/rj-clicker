@@ -29,7 +29,8 @@ public sealed class Win32BackgroundClickService : IBackgroundClickService
 
         var clickCycles = pressType == PressType.Double ? 2 : 1;
         var (downMessage, upMessage, downWParam) = GetMessages(button);
-        var lParam = BuildLParam(target.X, target.Y);
+        var (clientX, clientY) = ResolveClientCoordinates(target, targetWindowHandle);
+        var lParam = BuildLParam(clientX, clientY);
 
         for (var cycle = 0; cycle < clickCycles; cycle++)
         {
@@ -44,14 +45,30 @@ public sealed class Win32BackgroundClickService : IBackgroundClickService
         return Task.FromResult(new BackgroundClickResult(true));
     }
 
-    private static nint ResolveTargetWindowHandle(PointTarget target)
+    private nint ResolveTargetWindowHandle(PointTarget target)
     {
         if (target.TargetWindowId.HasValue && target.TargetWindowId.Value != nint.Zero)
         {
             return target.TargetWindowId.Value;
         }
 
-        return nint.Zero;
+        return _win32Api.GetForegroundWindow();
+    }
+
+    private (int X, int Y) ResolveClientCoordinates(PointTarget target, nint targetWindowHandle)
+    {
+        if (target.TargetType == TargetType.WindowRelative)
+        {
+            return (target.X, target.Y);
+        }
+
+        var hasWindowBounds = _win32Api.GetWindowRect(targetWindowHandle, out var windowRect);
+        if (!hasWindowBounds)
+        {
+            return (target.X, target.Y);
+        }
+
+        return (target.X - windowRect.Left, target.Y - windowRect.Top);
     }
 
     private static (uint DownMessage, uint UpMessage, nuint DownWParam) GetMessages(MouseButton button)

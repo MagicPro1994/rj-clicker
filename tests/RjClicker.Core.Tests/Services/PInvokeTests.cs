@@ -76,6 +76,49 @@ public sealed class PInvokeTests
     }
 
     [Fact]
+    public async Task BackgroundClick_ShouldFallbackToForegroundWindow_WhenTargetWindowHandleMissing()
+    {
+        var fake = new FakeWin32Api
+        {
+            ForegroundWindow = new nint(777),
+        };
+        var service = new Win32BackgroundClickService(fake);
+
+        var result = await service.ExecuteClickAsync(
+            new PointTarget(TargetType.WindowRelative, 15, 30, null),
+            CoreMouseButton.Left,
+            PressType.Single);
+
+        result.Succeeded.Should().BeTrue();
+        fake.PostedMessages.Should().HaveCount(2);
+        fake.PostedMessages.All(message => message.handle == new nint(777)).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task BackgroundClick_ShouldTranslateAbsoluteCoordinatesToClientCoordinates()
+    {
+        var fake = new FakeWin32Api
+        {
+            ForegroundWindow = new nint(777),
+            GetWindowRectResult = true,
+            RectResult = new NativeMethods.RECT { Left = 100, Top = 200, Right = 500, Bottom = 600 },
+        };
+        var service = new Win32BackgroundClickService(fake);
+
+        var result = await service.ExecuteClickAsync(
+            PointTarget.Absolute(120, 260),
+            CoreMouseButton.Left,
+            PressType.Single);
+
+        var expectedClientLParam = new nint((60 << 16) | 20);
+
+        result.Succeeded.Should().BeTrue();
+        fake.PostedMessages.Should().HaveCount(2);
+        fake.PostedMessages[0].lParam.Should().Be(expectedClientLParam);
+        fake.PostedMessages[1].lParam.Should().Be(expectedClientLParam);
+    }
+
+    [Fact]
     public async Task BackgroundClick_ShouldPostMessages_WhenWindowHandleIsAvailable()
     {
         var fake = new FakeWin32Api();

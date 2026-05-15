@@ -45,6 +45,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _freezePointer;
     private bool _keepOnTop;
     private bool _isWindowHidden;
+    private bool _hideOnStart;
+    private bool _showOnStop;
 
     public MainViewModel(
         ClickSessionController clickSessionController,
@@ -97,7 +99,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ClearPoints = new RelayCommand(_ => ClearPointsAsync(), _ => !IsRunning && PointTargets.Count > 0);
         MovePointUp = new RelayCommand(MovePointUpAsync, parameter => !IsRunning && CanMovePoint(parameter, isMoveUp: true));
         MovePointDown = new RelayCommand(MovePointDownAsync, parameter => !IsRunning && CanMovePoint(parameter, isMoveUp: false));
-        HideShowWindowCommand = new RelayCommand(_ => ToggleWindowVisibilityAsync());
+
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -315,16 +317,20 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool IsWindowHidden
     {
         get => _isWindowHidden;
-        private set
-        {
-            if (SetField(ref _isWindowHidden, value))
-            {
-                OnPropertyChanged(nameof(HideShowWindowText));
-            }
-        }
+        private set => SetField(ref _isWindowHidden, value);
     }
 
-    public string HideShowWindowText => IsWindowHidden ? "Show" : "Hide";
+    public bool HideOnStart
+    {
+        get => _hideOnStart;
+        set => SetField(ref _hideOnStart, value);
+    }
+
+    public bool ShowOnStop
+    {
+        get => _showOnStop;
+        set => SetField(ref _showOnStop, value);
+    }
 
     public string StartStopHotkeyDisplay => BuildHotkeyDisplay(StartStopModifiers, StartStopKey);
 
@@ -348,7 +354,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public ICommand MovePointDown { get; }
 
-    public ICommand HideShowWindowCommand { get; }
+
 
     public bool IsRunning => _clickSessionController.IsRunning;
 
@@ -384,12 +390,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private Task ClearPointsAsync()
     {
         PointTargets.Clear();
-        return Task.CompletedTask;
-    }
-
-    private Task ToggleWindowVisibilityAsync()
-    {
-        IsWindowHidden = !IsWindowHidden;
         return Task.CompletedTask;
     }
 
@@ -436,13 +436,36 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        var capturedX = (int)Math.Round(capturedPoint.Value.X);
+        var capturedY = (int)Math.Round(capturedPoint.Value.Y);
+
+        if (SelectedDeliveryMode == DeliveryMode.Background)
+        {
+            var foregroundWindowHandle = await _windowBindingService.GetForegroundWindowHandleAsync();
+            if (foregroundWindowHandle != nint.Zero)
+            {
+                var windowBounds = await _windowBindingService.GetWindowBoundsAsync(foregroundWindowHandle);
+                if (!windowBounds.IsEmpty)
+                {
+                    AddPointInternal(
+                        TargetType.WindowRelative,
+                        x: capturedX - (int)Math.Round(windowBounds.Left),
+                        y: capturedY - (int)Math.Round(windowBounds.Top),
+                        windowId: foregroundWindowHandle);
+
+                    CurrentStatus = $"Recorded background point: {capturedX}, {capturedY}";
+                    return;
+                }
+            }
+        }
+
         AddPointInternal(
             TargetType.Absolute,
-            x: (int)Math.Round(capturedPoint.Value.X),
-            y: (int)Math.Round(capturedPoint.Value.Y),
+            x: capturedX,
+            y: capturedY,
             windowId: null);
 
-        CurrentStatus = $"Recorded point: {(int)Math.Round(capturedPoint.Value.X)}, {(int)Math.Round(capturedPoint.Value.Y)}";
+        CurrentStatus = $"Recorded point: {capturedX}, {capturedY}";
     }
 
     private async Task StartClickSessionAsync()
@@ -457,11 +480,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         ClickCount = 0;
         CurrentStatus = BuildRunningStatus();
+
+        if (HideOnStart)
+        {
+            IsWindowHidden = true;
+        }
+
+        var sessionTask = _clickSessionController.StartAsync(runtimeConfig, CancellationToken.None);
         NotifySessionStateChanged();
 
         try
         {
-            await _clickSessionController.StartAsync(runtimeConfig, CancellationToken.None);
+            await sessionTask;
             CurrentStatus = "Stopped";
         }
         catch (Exception exception)
@@ -470,6 +500,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         finally
         {
+            if (ShowOnStop)
+            {
+                IsWindowHidden = false;
+            }
+
             NotifySessionStateChanged();
         }
     }

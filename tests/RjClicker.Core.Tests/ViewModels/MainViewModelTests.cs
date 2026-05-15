@@ -128,6 +128,30 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
+    public async Task RecordPointCommand_InBackgroundMode_ShouldCaptureWindowRelativePoint()
+    {
+        var pointCaptureService = new FakePointCaptureService(new Point(120, 260));
+        var windowBindingService = new FakeWindowBindingService
+        {
+            ForegroundWindowHandle = new nint(1234),
+            ForegroundWindowBounds = new Rect(x: 100, y: 200, width: 300, height: 300),
+        };
+        var viewModel = CreateViewModel(
+            pointCaptureService: pointCaptureService,
+            windowBindingService: windowBindingService);
+        viewModel.SelectedDeliveryMode = DeliveryMode.Background;
+
+        viewModel.RecordPoint.Execute(null);
+        await Task.Delay(25);
+
+        viewModel.PointTargets.Should().ContainSingle();
+        viewModel.PointTargets[0].TargetType.Should().Be(TargetType.WindowRelative);
+        viewModel.PointTargets[0].WindowId.Should().Be(new nint(1234));
+        viewModel.PointTargets[0].X.Should().Be(20);
+        viewModel.PointTargets[0].Y.Should().Be(60);
+    }
+
+    [Fact]
     public async Task StartAndStopCommands_ShouldDriveRunningState()
     {
         var dispatcher = new FakeDispatcher();
@@ -144,6 +168,34 @@ public sealed class MainViewModelTests
         await Task.Delay(30);
 
         viewModel.IsRunning.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task StartClickSessionCommand_ShouldRaiseStopCanExecuteChanged_WhenSessionStarts()
+    {
+        var dispatcher = new FakeDispatcher();
+        var scheduler = new SlowFakeScheduler();
+        var controller = new ClickSessionController(dispatcher, scheduler);
+        var viewModel = CreateViewModel(controller: controller);
+
+        viewModel.AddPoint.Execute(null);
+
+        var stopEnabledSignals = 0;
+        viewModel.StopClickSession.CanExecuteChanged += (_, _) =>
+        {
+            if (viewModel.StopClickSession.CanExecute(null))
+            {
+                stopEnabledSignals++;
+            }
+        };
+
+        viewModel.StartClickSession.Execute(null);
+        await Task.Delay(30);
+
+        stopEnabledSignals.Should().BeGreaterThan(0);
+
+        viewModel.StopClickSession.Execute(null);
+        await Task.Delay(30);
     }
 
     [Fact]
@@ -178,21 +230,34 @@ public sealed class MainViewModelTests
     }
 
     [Fact]
-    public void HideShowWindowCommand_ShouldToggleWindowVisibilityState()
+    public void HideOnStartAndShowOnStop_ShouldBeConfigurable()
     {
         var viewModel = CreateViewModel();
 
-        viewModel.HideShowWindowText.Should().Be("Hide");
-        viewModel.IsWindowHidden.Should().BeFalse();
+        viewModel.HideOnStart = true;
+        viewModel.ShowOnStop = true;
 
-        viewModel.HideShowWindowCommand.Execute(null);
+        viewModel.HideOnStart.Should().BeTrue();
+        viewModel.ShowOnStop.Should().BeTrue();
+    }
 
-        viewModel.HideShowWindowText.Should().Be("Show");
+    [Fact]
+    public async Task SessionLifecycle_ShouldHideAndRestoreWindow_WhenHideOnStartAndShowOnStopAreTrue()
+    {
+        var dispatcher = new FakeDispatcher();
+        var scheduler = new SlowFakeScheduler();
+        var controller = new ClickSessionController(dispatcher, scheduler);
+        var viewModel = CreateViewModel(controller: controller);
+        viewModel.AddPoint.Execute(null);
+        viewModel.HideOnStart = true;
+        viewModel.ShowOnStop = true;
+
+        viewModel.StartClickSession.Execute(null);
+        await Task.Delay(30);
         viewModel.IsWindowHidden.Should().BeTrue();
 
-        viewModel.HideShowWindowCommand.Execute(null);
-
-        viewModel.HideShowWindowText.Should().Be("Hide");
+        viewModel.StopClickSession.Execute(null);
+        await Task.Delay(30);
         viewModel.IsWindowHidden.Should().BeFalse();
     }
 
@@ -276,14 +341,23 @@ public sealed class MainViewModelTests
 
     private sealed class FakeWindowBindingService : IWindowBindingService
     {
+        public nint ForegroundWindowHandle { get; init; } = nint.Zero;
+
+        public Rect ForegroundWindowBounds { get; init; } = Rect.Empty;
+
         public Task<nint> GetWindowHandleAsync(string windowTitle)
         {
             return Task.FromResult(nint.Zero);
         }
 
+        public Task<nint> GetForegroundWindowHandleAsync()
+        {
+            return Task.FromResult(ForegroundWindowHandle);
+        }
+
         public Task<Rect> GetWindowBoundsAsync(nint windowHandle)
         {
-            return Task.FromResult(Rect.Empty);
+            return Task.FromResult(windowHandle == ForegroundWindowHandle ? ForegroundWindowBounds : Rect.Empty);
         }
     }
 }

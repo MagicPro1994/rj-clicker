@@ -262,11 +262,8 @@
                         <CheckBox Content="Smart Click" IsChecked="{Binding UseSmartClick, Mode=TwoWay}" Margin="0,0,0,6" />
                         <CheckBox Content="Freeze Pointer" IsChecked="{Binding FreezePointer, Mode=TwoWay}" Margin="0,0,0,6" />
                         <CheckBox Content="Keep on Top" IsChecked="{Binding KeepOnTop, Mode=TwoWay}" Margin="0,0,0,10" />
-                        <Button Content="{Binding HideShowWindowText}"
-                                Command="{Binding HideShowWindowCommand}"
-                                Width="90"
-                                HorizontalAlignment="Left"
-                                Padding="10,4" />
+                        <CheckBox Content="Hide on start" IsChecked="{Binding HideOnStart, Mode=TwoWay}" Margin="0,0,0,6" />
+                        <CheckBox Content="Show on stop" IsChecked="{Binding ShowOnStop, Mode=TwoWay}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -302,6 +299,12 @@
                               HeadersVisibility="Column"
                               IsReadOnly="False"
                               GridLinesVisibility="Horizontal">
+                        <DataGrid.Resources>
+                            <Style TargetType="{x:Type DataGridCell}">
+                                <EventSetter Event="PreviewMouseLeftButtonDown"
+                                             Handler="OnPointTargetsCellPreviewMouseLeftButtonDown" />
+                            </Style>
+                        </DataGrid.Resources>
                         <DataGrid.Columns>
                             <DataGridComboBoxColumn Header="Type"
                                                     Width="170"

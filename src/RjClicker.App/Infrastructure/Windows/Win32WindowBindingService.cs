@@ -32,6 +32,11 @@ public sealed class Win32WindowBindingService : IWindowBindingService
         return Task.FromResult(_win32Api.FindWindow(null, windowTitle));
     }
 
+    public Task<nint> GetForegroundWindowHandleAsync()
+    {
+        return Task.FromResult(_win32Api.GetForegroundWindow());
+    }
+
     public Task<Rect> GetWindowBoundsAsync(nint windowHandle)
     {
         if (windowHandle == nint.Zero)

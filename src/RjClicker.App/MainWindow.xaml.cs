@@ -2,7 +2,10 @@
 using RjClicker.App.Infrastructure.Hotkeys;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace RjClicker.App;
 
@@ -117,4 +120,24 @@ public partial class MainWindow : Window
             OnStartStopHotkeyPressedAsync);
     }
 
+    private void OnPointTargetsCellPreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        var cell = (DataGridCell)sender;
+        var row = FindVisualParent<DataGridRow>(cell);
+        if (row is { IsSelected: false })
+        {
+            row.IsSelected = true;
+        }
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject? element) where T : DependencyObject
+    {
+        while (element != null)
+        {
+            if (element is T match) return match;
+            element = VisualTreeHelper.GetParent(element);
+        }
+
+        return null;
+    }
 }
