@@ -1,0 +1,156 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "clean",
+      "detail": "Remove all bin/ and obj/ directories",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["clean", "src/RjClicker.sln", "--configuration", "Release"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "restore",
+      "detail": "Restore NuGet packages",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["restore", "src/RjClicker.sln"],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build",
+      "detail": "Build Debug configuration",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "src/RjClicker.sln", "--configuration", "Debug", "--no-restore"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOn": "restore",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build:release",
+      "detail": "Build Release configuration",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "src/RjClicker.sln", "--configuration", "Release", "--no-restore"],
+      "group": "build",
+      "dependsOn": "restore",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test",
+      "detail": "Run all tests",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["test", "src/RjClicker.sln", "--configuration", "Debug", "--no-build", "--logger", "console;verbosity=normal"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "dependsOn": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "test:release",
+      "detail": "Run all tests in Release configuration",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["test", "src/RjClicker.sln", "--configuration", "Release", "--no-build", "--logger", "console;verbosity=normal"],
+      "group": "test",
+      "dependsOn": "build:release",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "detail": "Publish framework-dependent (requires .NET 8 Runtime on target machine)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "src/RjClicker.App/RjClicker.App.csproj",
+        "--configuration", "Release",
+        "--no-restore",
+        "--output", "publish/framework-dependent"
+      ],
+      "group": "build",
+      "dependsOn": "restore",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish:self-contained",
+      "detail": "Publish self-contained x64 (no .NET Runtime required on target machine)",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "src/RjClicker.App/RjClicker.App.csproj",
+        "--configuration", "Release",
+        "--no-restore",
+        "--self-contained",
+        "--runtime", "win-x64",
+        "--output", "publish/self-contained"
+      ],
+      "group": "build",
+      "dependsOn": "restore",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "release",
+      "detail": "Full release: clean → restore → test → publish self-contained",
+      "type": "shell",
+      "command": "dotnet",
+      "args": [
+        "publish",
+        "src/RjClicker.App/RjClicker.App.csproj",
+        "--configuration", "Release",
+        "--self-contained",
+        "--runtime", "win-x64",
+        "--output", "publish/self-contained"
+      ],
+      "group": "build",
+      "dependsOn": "test:release",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
