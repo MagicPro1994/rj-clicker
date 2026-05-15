@@ -12,12 +12,18 @@ namespace RjClicker.App;
 public partial class App : Application
 {
 	private IServiceProvider? _serviceProvider;
+	private AppExceptionLogger? _appExceptionLogger;
 
 	protected override async void OnStartup(StartupEventArgs e)
 	{
 		base.OnStartup(e);
 
 		_serviceProvider = ServiceRegistration.BuildServiceProvider();
+		_appExceptionLogger = _serviceProvider.GetRequiredService<AppExceptionLogger>();
+		DispatcherUnhandledException += OnDispatcherUnhandledException;
+		AppDomain.CurrentDomain.UnhandledException += OnCurrentDomainUnhandledException;
+		TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+
 		var settingsStore = _serviceProvider.GetRequiredService<ISettingsStore>();
 		var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
 		var hotkeyService = _serviceProvider.GetRequiredService<IGlobalHotkeyService>();
@@ -34,6 +40,10 @@ public partial class App : Application
 
 	protected override async void OnExit(ExitEventArgs e)
 	{
+		DispatcherUnhandledException -= OnDispatcherUnhandledException;
+		AppDomain.CurrentDomain.UnhandledException -= OnCurrentDomainUnhandledException;
+		TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
+
 		if (_serviceProvider != null)
 		{
 			var viewModel = _serviceProvider.GetRequiredService<MainViewModel>();
@@ -152,6 +162,24 @@ public partial class App : Application
 				parts.Add(flag.ToString());
 		}
 		return string.Join("+", parts);
+	}
+
+	private async void OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+	{
+		await _appExceptionLogger?.LogDispatcherUnhandledExceptionAsync(e.Exception)!;
+	}
+
+	private async void OnCurrentDomainUnhandledException(object? sender, UnhandledExceptionEventArgs e)
+	{
+		if (e.ExceptionObject is Exception exception)
+		{
+			await _appExceptionLogger?.LogUnhandledExceptionAsync(exception)!;
+		}
+	}
+
+	private async void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
+	{
+		await _appExceptionLogger?.LogUnobservedTaskExceptionAsync(e.Exception)!;
 	}
 }
 

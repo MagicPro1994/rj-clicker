@@ -6,6 +6,7 @@ using RjClicker.App.Infrastructure.Points;
 using RjClicker.App.Infrastructure.Windows;
 using RjClicker.App.Services;
 using RjClicker.App.ViewModels;
+using System.IO;
 
 namespace RjClicker.App;
 
@@ -23,7 +24,12 @@ public static class ServiceRegistration
         services.AddSingleton<IPointCaptureService, Win32PointCaptureService>();
         services.AddSingleton<IWindowBindingService, Win32WindowBindingService>();
         services.AddSingleton<ClickSessionController>();
-        services.AddSingleton<ISettingsStore, JsonSettingsStore>();
+        services.AddSingleton<IAppLogger, FileAppLogger>();
+        services.AddSingleton<AppExceptionLogger>();
+        services.AddSingleton<ISettingsStore>(serviceProvider =>
+            new JsonSettingsStore(
+                Path.Combine(AppContext.BaseDirectory, "settings.json"),
+                serviceProvider.GetRequiredService<IAppLogger>()));
         services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();

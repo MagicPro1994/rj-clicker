@@ -40,6 +40,8 @@ public sealed class DependencyInjectionTests : IDisposable
         _serviceProvider.GetRequiredService<ClickSessionController>().Should().NotBeNull();
         _serviceProvider.GetRequiredService<ISettingsStore>().Should().NotBeNull();
         _serviceProvider.GetRequiredService<MainViewModel>().Should().NotBeNull();
+        _serviceProvider.GetRequiredService<IAppLogger>().Should().NotBeNull();
+        _serviceProvider.GetRequiredService<AppExceptionLogger>().Should().NotBeNull();
     }
 
     [Fact]
